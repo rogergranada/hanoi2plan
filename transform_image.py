@@ -69,9 +69,27 @@ def old_mask(image, fixed_size=(800,600), erode=False, dilate=False):
     #crop_img = cv2.resize(crop_img, (65,15)) 
     return mask
 
+def apply_on_gray(image, fixed_size=(800,600), erode=False, dilate=False):
+    image = cv2.imread(image, 0)
+    if fixed_size:
+        image = cv2.resize(image, fixed_size) 
+
+    white_lower = np.array([ 0])
+    white_upper = np.array([ 115])
+    mask = extract_mask(image, white_lower, white_upper, erode=erode, dilate=dilate)
+    return mask
+
+
+def rotate_image(image, angle):
+    image_center = tuple(np.array(image.shape[1::-1]) / 2)
+    rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+    result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return result
+
+
 def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
-    #image = cv2.imread(image, 0)
     image = cv2.imread(image)
+    image = rotate_image(image, 359)
     if fixed_size:
         image = cv2.resize(image, fixed_size) 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -103,11 +121,11 @@ def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
     #res = cv2.inRange(hsv, white_lower, white_upper)
     #mask = cv2.bitwise_and(image, image, mask= res)
     """ experiments """
-    #crop_img = mask[130:280, :]
+    crop_img = mask[125:275, :]
 
     #crop_img = cv2.resize(crop_img, (80,15)) 
     #save_image('/home/roger/Desktop/small.jpg', crop_img)
-    return mask
+    return crop_img
 
 
 import argparse
