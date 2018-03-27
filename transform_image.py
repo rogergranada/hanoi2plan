@@ -40,7 +40,7 @@ def generate_contours(image, kernel_size=9):
     return img_contours
 
 
-def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
+def old_mask(image, fixed_size=(800,600), erode=False, dilate=False):
     image = cv2.imread(image)
     if fixed_size:
         image = cv2.resize(image, fixed_size) 
@@ -69,6 +69,46 @@ def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
     #crop_img = cv2.resize(crop_img, (65,15)) 
     return mask
 
+def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
+    #image = cv2.imread(image, 0)
+    image = cv2.imread(image)
+    if fixed_size:
+        image = cv2.resize(image, fixed_size) 
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    #Stick and yellow disk
+    yellow_lower = np.array([ 15,  70,  10])
+    yellow_upper = np.array([ 30,  255,  255])
+    yellow_mask = extract_mask(hsv, yellow_lower, yellow_upper, erode=erode, dilate=dilate)
+    
+    #Green disk
+    green_lower = np.array([ 40,   60,   10])
+    green_upper = np.array([ 70,  255,  255])
+    green_mask = extract_mask(hsv, green_lower, green_upper, erode=erode, dilate=dilate)
+
+    #Blue disk
+    blue_lower = np.array([90,  60,   10])
+    blue_upper = np.array([120, 255,  255])
+    blue_mask = extract_mask(hsv, blue_lower, blue_upper, erode=erode, dilate=dilate)
+
+    #Orange disk (bad but ok)
+    orange_lower = np.array([5,  60,   10])
+    orange_upper = np.array([15, 255,  255])
+    orange_mask = extract_mask(hsv, orange_lower, orange_upper, erode=erode, dilate=dilate)
+    
+    mask = yellow_mask + green_mask + blue_mask + orange_mask
+    #white_lower = np.array([ 0])
+    #white_upper = np.array([ 115])
+    #mask = extract_mask(image, white_lower, white_upper, erode=erode, dilate=dilate)
+    #res = cv2.inRange(hsv, white_lower, white_upper)
+    #mask = cv2.bitwise_and(image, image, mask= res)
+    """ experiments """
+    #crop_img = mask[130:280, :]
+
+    #crop_img = cv2.resize(crop_img, (80,15)) 
+    #save_image('/home/roger/Desktop/small.jpg', crop_img)
+    return mask
+
 
 import argparse
 if __name__ == "__main__":
@@ -76,7 +116,7 @@ if __name__ == "__main__":
     parser.add_argument('inputfile', metavar='file_input', help='Image file')
     args = parser.parse_args()
 
-    mask = apply_mask(args.inputfile, fixed_size=(800,600), erode=True, dilate=False)
+    mask = apply_mask(args.inputfile, fixed_size=(800,600), erode=False, dilate=False)
     cv2.imshow("window", mask)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
