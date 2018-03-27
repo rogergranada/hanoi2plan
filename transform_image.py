@@ -81,17 +81,19 @@ def apply_on_gray(image, fixed_size=(800,600), erode=False, dilate=False):
 
 
 def rotate_image(image, angle):
+    """ receives an image <np.array> and rotates it to `angle` """
     image_center = tuple(np.array(image.shape[1::-1]) / 2)
     rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
     result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
 
 
-def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
+def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False, rotate=0):
     image = cv2.imread(image)
-    image = rotate_image(image, 359)
     if fixed_size:
         image = cv2.resize(image, fixed_size) 
+    if rotate:
+        image = rotate_image(image, rotate)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     #Stick and yellow disk
@@ -115,11 +117,7 @@ def apply_mask(image, fixed_size=(800,600), erode=False, dilate=False):
     orange_mask = extract_mask(hsv, orange_lower, orange_upper, erode=erode, dilate=dilate)
     
     mask = yellow_mask + green_mask + blue_mask + orange_mask
-    #white_lower = np.array([ 0])
-    #white_upper = np.array([ 115])
-    #mask = extract_mask(image, white_lower, white_upper, erode=erode, dilate=dilate)
-    #res = cv2.inRange(hsv, white_lower, white_upper)
-    #mask = cv2.bitwise_and(image, image, mask= res)
+
     """ experiments """
     crop_img = mask[125:275, :]
 

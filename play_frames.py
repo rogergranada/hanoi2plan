@@ -3,7 +3,7 @@
 
 import os
 from os.path import join, splitext, basename, dirname
-from os.path import realpath, abspath, exists, isdir
+from os.path import realpath, abspath, exists, isdir, isfile
 
 import argparse
 import ast
@@ -87,7 +87,7 @@ class DemoWindow(Tk):
     """
     Class to manage the window of the demo
     """
-    def __init__(self, fileinput, fixed_size=(800,600), erode=False, dilate=False, save=True, dirout=None):
+    def __init__(self, fileinput, fixed_size=(800,600), erode=False, dilate=False, save=True, dirout=None, rotate=0):
         """
         Build the visual interface with images and fields to the images data
         """
@@ -102,6 +102,7 @@ class DemoWindow(Tk):
         self.dilate = dilate
         self.save = save
         self.dirout = dirout
+        self.rotate = rotate
 
         Tk.__init__(self)
         self.title("Sequence of frames")
@@ -128,7 +129,8 @@ class DemoWindow(Tk):
         """
         if binarize:
             cv2_im = transform_image.apply_mask(pathimg, fixed_size=self.size, 
-                                                erode=self.erode, dilate=self.dilate)
+                                                erode=self.erode, dilate=self.dilate,
+                                                rotate=self.rotate)
             #cv2_im = cv2.cvtColor(cv2_im, cv2.COLOR_BGR2RGB)
             im = Image.fromarray(cv2_im)
         else:
@@ -180,34 +182,38 @@ def create_file_paths(inputfolder, fileoutput):
 
 if __name__== "__main__":
     parser = argparse.ArgumentParser()
-    """ Create file containing all paths ""
-    parser.add_argument('inputfolder', metavar='folder_input', 
-                        help='folder containing images.')
-    parser.add_argument('outputfile', metavar='file_output', 
-                        help='file to save paths of images.')
-    args = parser.parse_args()
-    create_file_paths(args.inputfolder, args.outputfile)
-    """
     parser.add_argument('inputfile', metavar='file_input', 
-                        help='file containing the paths of images.')
+                        help='file containing the paths of images or folder containing images.')
     parser.add_argument('-s', '--size', help='Size of the image. Added as: 800x600', default='None', type=str)
     parser.add_argument('-e', '--erode', help='Erode image mask', action='store_true')
     parser.add_argument('-d', '--dilate', help='Dilate image mask', action='store_true')
+    parser.add_argument('-r', '--rotate', help='Rotate image at k degrees', default=0, type=int)
     parser.add_argument('-o', '--output', help='Path to the folder to save images', default='None', type=str)
     args = parser.parse_args()
 
-    if args.size == 'None':
-        size = None
+    inputfile = args.inputfile
+    dirout = args.output 
+    size = args.size
+    if size == 'None':
+        size = (800,600)
     else:
-        w, h = args.size.split('x')
+        w, h = size.split('x')
         size = (int(w), int(h))
 
     save = False
-    dirout = None
-    if args.output != 'None':
+    if args.output == 'None':
+        dirout = dirname(inputfile)
+    else:
         save = True
-        dirout = is_folder(args.output)
-    
-    window = DemoWindow(args.inputfile, fixed_size=size, erode=args.erode, dilate=args.dilate, save=save, dirout=dirout)
+        dirout = is_folder(dirout)
+
+    if isdir(inputfile):
+        print 'creating paths to images'
+        filepaths = join(dirout, 'paths.txt')
+        create_file_paths(inputfile, filepaths)
+    elif isfile(inputfile):
+        filepaths = inputfile
+
+    window = DemoWindow(filepaths, fixed_size=size, erode=args.erode, dilate=args.dilate, save=save, dirout=dirout, rotate=args.rotate)
     window.mainloop()
     
